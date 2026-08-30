@@ -24,8 +24,8 @@ in
       -- Opciones básicas del editor
       vim.opt.number = true            -- Mostrar número de línea
       vim.opt.relativenumber = true    -- Números relativos para saltos rápidos
-      vim.opt.shiftwidth = 2           -- Indentación de 2 espacios
-      vim.opt.tabstop = 2
+      vim.opt.shiftwidth = 4           -- Indentación de 4 espacios
+      vim.opt.tabstop = 4
       vim.opt.expandtab = true         -- Convertir tabs en espacios
       vim.opt.smartindent = true
       vim.opt.termguicolors = true     -- Colores RGB reales en terminal
@@ -34,6 +34,9 @@ in
       -- Corrector ortográfico nativo para escritura de notas
       vim.opt.spelllang = { "es", "en" } -- Soporte para español e inglés
       vim.opt.spell = false             -- Desactivado por defecto (se activa por buffer con :set spell)
+
+      -- Dibuja una línea vertical sutil en la columna 80 como guía de estilo
+      vim.opt.colorcolumn = "80"
 
       vim.g.mapleader = " "            -- Espacio como tecla líder (Leader key)
     '';
@@ -246,6 +249,14 @@ in
           vim.api.nvim_create_autocmd("FileType", {
             pattern = "markdown",
             callback = function()
+            -- Desactiva por completo la línea guía vertical de 80 caracteres en notas
+              vim.opt_local.colorcolumn = ""
+
+              -- Ajuste visual dinámico e inteligente de texto (Soft Wrap)
+              vim.opt_local.wrap = true         -- Mostrar las líneas largas ajustadas a la pantalla
+              vim.opt_local.linebreak = true    -- Cortar las palabras completas al ajustar, no a la mitad
+              vim.opt_local.textwidth = 0       -- Desactivar corte físico (opcional, para notas más fluidas)
+
               -- Seguir enlaces con gf de forma nativa (o abrir por defecto si no es un enlace de Obsidian)
               vim.keymap.set("n", "gf", function()
                 if require("obsidian").util.cursor_on_markdown_link() then

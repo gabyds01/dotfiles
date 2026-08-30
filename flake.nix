@@ -35,7 +35,7 @@
 	        useGlobalPkgs = true;
 	        useUserPackages = true;
 	        # Definimos el archivo de configuracion para el usuario
-            extraSpecialArgs = { inherit inputs; };
+          extraSpecialArgs = { inherit inputs; };
 	        users.gabrields = import ./home.nix;
 	      };
 	    }

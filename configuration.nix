@@ -1,52 +1,33 @@
-# Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-
 { config, pkgs, ... }:
 
 {
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-      ./modules/system-apps.nix
-    ];
+  # =========================================================================
+  # 1. Módulos e Importaciones
+  # =========================================================================
+  imports = [
+    ./hardware-configuration.nix
+    ./modules/system-apps.nix
+    ./modules/virtualisation.nix
+  ];
 
-  # Bootloader.
+  # =========================================================================
+  # 2. Arranque y Kernel (Bootloader)
+  # =========================================================================
   boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot.configurationLimit = 10;
   boot.loader.efi.canTouchEfiVariables = true;
-
-  # Use latest kernel.
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  boot.loader.systemd-boot.configurationLimit = 10;
-
-  networking.hostName = "nixos"; # Define your hostname.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-
-  # Enable networking
+  # =========================================================================
+  # 3. Red y Conectividad
+  # =========================================================================
+  networking.hostName = "nixos";
   networking.networkmanager.enable = true;
 
-  hardware.bluetooth = {
-    enable = true;
-    settings = {
-      General = {
-	Name = "Hello";
-	ControllerMode = "dual";
-	FastConnectable = "true";
-	Experimental = "true";
-      };
-      Policy = {
-	AutoEnable = "true";
-      };
-    };
-  };
-
-  hardware.opentabletdriver.enable = true;
-
-  # Set your time zone.
+  # =========================================================================
+  # 4. Localización e Idioma
+  # =========================================================================
   time.timeZone = "America/Argentina/Buenos_Aires";
-
-  # Select internationalisation properties.
   i18n.defaultLocale = "en_US.UTF-8";
 
   i18n.extraLocaleSettings = {
@@ -61,27 +42,46 @@
     LC_TIME = "en_US.UTF-8";
   };
 
-  # Enable the X11 windowing system.
-  # You can disable this if you're only using the Wayland session.
+  # =========================================================================
+  # 5. Entorno Gráfico y Teclado
+  # =========================================================================
   services.xserver.enable = true;
-
-  # Enable the KDE Plasma Desktop Environment.
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
 
-  # Configure keymap in X11
+  # Distribución del teclado en X11 y consola TTY
   services.xserver.xkb = {
     layout = "latam";
     variant = "deadtilde";
   };
-
-  # Configure console keymap
   console.keyMap = "la-latin1";
 
-  # Enable CUPS to print documents.
+  # =========================================================================
+  # 6. Hardware y Periféricos
+  # =========================================================================
+  hardware.bluetooth = {
+    enable = true;
+    settings = {
+      General = {
+        Name = "Hello";
+        ControllerMode = "dual";
+        FastConnectable = "true";
+        Experimental = "true";
+      };
+      Policy = {
+        AutoEnable = "true";
+      };
+    };
+  };
+
+  hardware.opentabletdriver.enable = true;
+
+  # =========================================================================
+  # 7. Audio e Impresión
+  # =========================================================================
   services.printing.enable = true;
 
-  # Enable sound with pipewire.
+  # Configuración de audio con PipeWire
   services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
@@ -89,90 +89,53 @@
     alsa.enable = true;
     alsa.support32Bit = true;
     pulse.enable = true;
-    # If you want to use JACK applications, uncomment this
-    #jack.enable = true;
   };
 
-  # services.blueman.enable = true;
-
-  # Enable touchpad support (enabled default in most desktopManager).
-  # services.xserver.libinput.enable = true;
-
-  # Define a user account. Don't forget to set a password with ‘passwd’.
+  # =========================================================================
+  # 8. Usuarios del Sistema
+  # =========================================================================
   users.users."gabrields" = {
     isNormalUser = true;
     description = "Gabriel da Silva";
     extraGroups = [ "networkmanager" "wheel" "libvirtd" "docker" ];
-    packages = with pkgs; [
-    ];
+    packages = with pkgs; [ ];
   };
 
-  # Install firefox.
-  programs.firefox.enable = true;
-
-  programs.neovim = {
-    enable = true;
-    defaultEditor = true;
-  };
-
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
-
+  # =========================================================================
+  # 9. Integración del Sistema
+  # =========================================================================
   xdg.terminal-exec = {
     enable = true;
     settings = {
       default = [
-	"alacritty.desktop"
+        "alacritty.desktop"
       ];
     };
   };
 
-  # Configuración global de fuentes en NixOS
+  # =========================================================================
+  # 10. Fuentes Tipográficas
+  # =========================================================================
   fonts.packages = with pkgs; [
     nerd-fonts.jetbrains-mono
     nerd-fonts.fira-code
   ];
 
+  # =========================================================================
+  # 11. Configuración de Nix y Mantenimiento
+  # =========================================================================
+  nixpkgs.config.allowUnfree = true;
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
-  programs.direnv.enable = true;
-  programs.direnv.nix-direnv.enable = true;
-
-  # List services that you want to enable:
-
-  # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
-
-  virtualisation.libvirtd = {
-    enable = true;
-    qemu.vhostUserPackages = with pkgs; [ virtiofsd ];
-  };
-  programs.virt-manager.enable = true;
-
-  virtualisation.docker = {
-    enable = true;
-  };
-
-  networking.firewall.trustedInterfaces = [ "virbr0" ];
-
+  # Limpieza periódica del Nix Store
   nix.gc = {
     automatic = true;
     dates = "weekly";
     options = "--delete-older-than 15d";
   };
 
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
-
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "26.05"; # Did you read the comment?
-
+  # =========================================================================
+  # 12. Versión del Estado de NixOS
+  # =========================================================================
+  system.stateVersion = "26.05";
 }

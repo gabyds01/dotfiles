@@ -73,6 +73,14 @@
     };
   };
 
+  # Programas gestionados por Home Manager
+  programs.firefox.enable = true;
+
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
+  };
+
   # 1. Le decimos a Home Manager que gestione Bash
   programs.bash = {
     enable = true;
