@@ -125,6 +125,12 @@
     };
   };
 
+  # Configuración global de fuentes en NixOS
+  fonts.packages = with pkgs; [
+    nerd-fonts.jetbrains-mono
+    nerd-fonts.fira-code
+  ];
+
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   programs.direnv.enable = true;

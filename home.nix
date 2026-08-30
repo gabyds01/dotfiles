@@ -52,6 +52,17 @@
       terminal.shell = {
         program = "${pkgs.tmux}/bin/tmux";
       };
+      font = {
+        normal = {
+          family = "JetBrainsMono Nerd Font";
+          style = "Regular";
+      };
+      bold = {
+          family = "JetBrainsMono Nerd Font";
+          style = "Bold";
+      };
+      size = 12.0;
+      };
     };
   };
 
