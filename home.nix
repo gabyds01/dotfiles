@@ -73,6 +73,12 @@
     };
   };
 
+  # Alias declarativos de la terminal
+  home.shellAliases = {
+    # 'nrs' por "NixOS Rebuild Switch"
+    nrs = "sudo nixos-rebuild switch --flake ~/dotfiles";
+  };
+
   # Esta version de estado es requerida para evitar problemas de compatibilidad
   home.stateVersion = "26.05"; 
 }
