@@ -73,10 +73,13 @@
     };
   };
 
-  # Alias declarativos de la terminal
-  home.shellAliases = {
-    # 'nrs' por "NixOS Rebuild Switch"
-    nrs = "sudo nixos-rebuild switch --flake ~/dotfiles";
+  # 1. Le decimos a Home Manager que gestione Bash
+  programs.bash = {
+    enable = true;
+    
+    shellAliases = {
+      nrs = "sudo nixos-rebuild switch --flake ~/dotfiles";
+    };
   };
 
   # Esta version de estado es requerida para evitar problemas de compatibilidad

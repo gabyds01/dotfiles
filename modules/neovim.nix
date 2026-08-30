@@ -1,13 +1,13 @@
 { pkgs, ... }:
 
 let
-  # Empaquetamos mizisu/django.nvim directamente desde GitHub ya que es muy nuevo
+  # Empaquetamos mizisu/django.nvim directamente desde GitHub
   django-nvim = pkgs.vimUtils.buildVimPlugin {
     name = "django-nvim";
     src = pkgs.fetchFromGitHub {
       owner = "mizisu";
       repo = "django.nvim";
-      rev = "2615ca95f16ee74a86e9680f6b81a032f6e69b19"; # Commit con soporte blink
+      rev = "2615ca95f16ee74a86e9680f6b81a032f6e69b19";
       sha256 = "sha256-n/AO6bUB0f+iRKxNQeQrHrzNjoud6/HfXhPDtvpDynM=";
     };
   };
@@ -19,174 +19,141 @@ in
     viAlias = true;
     vimAlias = true;
 
-    # Opciones básicas generales de Neovim escritas en Lua embebido
+    # Opciones básicas generales de Neovim
     initLua = ''
       -- Opciones básicas del editor
       vim.opt.number = true            -- Mostrar número de línea
       vim.opt.relativenumber = true    -- Números relativos para saltos rápidos
-      vim.opt.shiftwidth = 4           -- Indentación de 4 espacios (ideal para Python)
-      vim.opt.tabstop = 4
+      vim.opt.shiftwidth = 2           -- Indentación de 2 espacios
+      vim.opt.tabstop = 2
       vim.opt.expandtab = true         -- Convertir tabs en espacios
       vim.opt.smartindent = true
       vim.opt.termguicolors = true     -- Colores RGB reales en terminal
       vim.opt.clipboard = "unnamedplus" -- Compartir portapapeles con el sistema
 
+      -- Corrector ortográfico nativo para escritura de notas
+      vim.opt.spelllang = { "es", "en" } -- Soporte para español e inglés
+      vim.opt.spell = false             -- Desactivado por defecto (se activa por buffer con :set spell)
+
       vim.g.mapleader = " "            -- Espacio como tecla líder (Leader key)
     '';
 
-    # Plugins instalados y configurados individualmente con Lua embebido
     plugins = with pkgs.vimPlugins; [
+      # === Tema Visual ===
+      {
+        plugin = kanagawa-nvim;
+        type = "lua";
+        config = ''
+          require('kanagawa').setup({
+              compile = false,
+              undercurl = true,
+              commentStyle = { italic = true },
+              keywordStyle = { italic = true },
+              transparent = false,
+              theme = "dragon",
+              background = { dark = "dragon", light = "lotus" },
+          })
+          vim.cmd("colorscheme kanagawa")
+        '';
+      }
 
-      # Iconos para tu statusline y el resto del editor
+      # === Barra de Estado e Iconos ===
       nvim-web-devicons
-      
-      # Lualine configurado con el tema Kanagawa
       {
         plugin = lualine-nvim;
         type = "lua";
         config = ''
           require('lualine').setup({
             options = {
-              theme = 'kanagawa', -- ¡Se acopla automáticamente a los colores!
+              theme = 'kanagawa',
               component_separators = { left = '', right = '' },
               section_separators = { left = '', right = '' },
-              globalstatus = true, -- Una única barra elegante al fondo del editor
+              globalstatus = true,
             }
           })
         '';
       }
 
-
-      # === Tema Visual: Kanagawa ===
-      {
-        plugin = kanagawa-nvim;
-        type = "lua";
-        config = ''
-          require('kanagawa').setup({
-              compile = false,             -- Desactivado por compatibilidad con el Nix Store de solo lectura
-              undercurl = true,            -- Soporte de subrayados curvados para terminales compatibles
-              commentStyle = { italic = true },
-              keywordStyle = { italic = true },
-              transparent = false,         -- Cambia a 'true' si usas transparencia en tu terminal
-              theme = "dragon",              -- Carga la variante dragon
-              background = {               -- Mapea los valores de fondo claro/oscuro
-                  dark = "dragon",           
-                  light = "lotus"
-              },
-          })
-
-          -- Aplicamos el tema de forma definitiva
-          vim.cmd("colorscheme kanagawa")
-        '';
-      }
-
       # === Lote 1: Edición Básica ===
-
-      # 1. Comment.nvim (gcc para comentar líneas)
       {
         plugin = comment-nvim;
         type = "lua";
         config = "require('Comment').setup()";
       }
-
-      # 2. nvim-autopairs (cierre automático de caracteres)
       {
         plugin = nvim-autopairs;
         type = "lua";
         config = "require('nvim-autopairs').setup()";
       }
-
-      # 3. Oil.nvim (navegador de archivos en el buffer)
       {
         plugin = oil-nvim;
         type = "lua";
         config = ''
-          require('oil').setup({
-            default_file_explorer = true,
-          })
-          -- Atajo rápido para abrir Oil con '-'
-          vim.keymap.set("n", "-", "<CMD>Oil<CR>", { desc = "Abrir directorio actual con Oil" })
+          require('oil').setup({ default_file_explorer = true })
+          vim.keymap.set("n", "-", "<CMD>Oil<CR>", { desc = "Abrir directorio con Oil" })
         '';
       }
 
       # === Lote 2: Sintaxis y Búsqueda ===
-
-      # 1. Treesitter: Resaltado gramatical inteligente
       {
         plugin = nvim-treesitter.withAllGrammars;
         type = "lua";
         config = ''
-          -- En Neovim moderno (0.11+), Treesitter se activa mediante autocomandos nativos
           vim.api.nvim_create_autocmd('FileType', {
-            pattern = { 'python', 'html', 'htmldjango', 'json', 'yaml', 'bash', 'gitconfig' },
+            pattern = { 'python', 'html', 'htmldjango', 'json', 'yaml', 'bash', 'gitconfig', 'markdown' },
             callback = function() vim.treesitter.start() end,
           })
         '';
       }
-
-      # 2. Telescope: El buscador difuso definitivo (requiere plenary-nvim)
       {
         plugin = telescope-nvim;
         type = "lua";
         config = ''
           local builtin = require('telescope.builtin')
-          -- Atajos para Telescope
           vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = 'Telescope: Buscar Archivos' })
-          vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = 'Telescope: Buscar Texto (ripgrep)' })
-          vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Telescope: Ver Buffers Abiertos' })
-          vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope: Buscar en la Ayuda' })
+          vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = 'Telescope: Buscar Texto' })
+          vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Telescope: Ver Buffers' })
+          
+          -- Cargar extensiones de Telescope
+          require('telescope').load_extension('fzf')
         '';
+      }
+      # Buscador rápido FZF compilado en C para Telescope
+      {
+        plugin = telescope-fzf-native-nvim;
+        type = "lua";
+        config = "";
       }
 
       # === Lote 3: Integración de Git ===
-
-      # 1. Gitsigns: Indicadores de Git en la barra lateral
       {
         plugin = gitsigns-nvim;
         type = "lua";
-        config = ''
-          require('gitsigns').setup({
-            current_line_blame = true, -- Muestra quién escribió la línea actual (Git Blame inline)
-          })
-        '';
+        config = "require('gitsigns').setup({ current_line_blame = true })";
       }
-
-      # 2. Neogit: Interfaz interactiva potente
       {
         plugin = neogit;
         type = "lua";
         config = ''
-          require('neogit').setup({
-            kind = "floating", -- Abre Neogit de forma elegante en una ventana flotante
-          })
-          -- Atajo rápido: <leader>gs (Git Status) para abrir Neogit
+          require('neogit').setup({ kind = "floating" })
           vim.keymap.set("n", "<leader>gs", "<cmd>Neogit<cr>", { desc = "Git: Abrir Neogit" })
         '';
       }
-
-      # 3. Diffview: Comparación interactiva de diferencias
       {
         plugin = diffview-nvim;
         type = "lua";
         config = ''
-          -- Atajos para abrir y cerrar Diffview
-          vim.keymap.set("n", "<leader>gd", "<cmd>DiffviewOpen<cr>", { desc = "Git: Ver diferencias del proyecto" })
-          vim.keymap.set("n", "<leader>gc", "<cmd>DiffviewClose<cr>", { desc = "Git: Cerrar Diffview" })
+          vim.keymap.set("n", "<leader>gd", "<cmd>DiffviewOpen<cr>", { desc = "Git: Ver diferencias" })
+          vim.keymap.set("n", "<leader>gc", "<cmd>DiffviewClose<cr>", { desc = "Git: Cerrar diferencias" })
         '';
       }
 
       # === Lote 4: Python, Django e Inteligencia ===
-
-      # 1. Configuración base de LSP (basado en vim.lsp.enable en Neovim moderno)
       {
         plugin = nvim-lspconfig;
         type = "lua";
-        config = ''
-          vim.lsp.enable('basedpyright')
-        '';
+        config = "vim.lsp.enable('basedpyright')";
       }
-
-      # 2. Autocompletado de alto rendimiento (Blink.cmp) con soporte para Django
       {
         plugin = blink-cmp;
         type = "lua";
@@ -206,53 +173,24 @@ in
           })
         '';
       }
-
-      # 3. Selector visual de Entornos Virtuales (.venv, poetry, etc.)
       {
         plugin = venv-selector-nvim;
         type = "lua";
         config = ''
-          require('venv-selector').setup({
-            options = {
-              on_venv_activate_callback = nil,
-            }
-          })
-          -- Atajo rápido para elegir entorno: <leader>vs
+          require('venv-selector').setup({ options = { on_venv_activate_callback = nil } })
           vim.keymap.set("n", "<leader>vs", "<cmd>VenvSelect<cr>", { desc = "Python: Elegir entorno virtual" })
         '';
       }
-
-      # Snacks.nvim: Requerido por django.nvim para pickers e inputs de UI
-      {
-        plugin = snacks-nvim;
-        type = "lua";
-        config = ''
-          require('snacks').setup({
-            bigfile = { enabled = true },
-            notifier = { enabled = true },
-            quickfile = { enabled = true },
-            statuscolumn = { enabled = true },
-            words = { enabled = true },
-            -- Activamos explícitamente el Picker para que django.nvim lo utilice
-            picker = { enabled = true },
-          })
-        '';
-      }
-
-      # 4. Plugin customizado de utilidades Django (empaquetado arriba)
       {
         plugin = django-nvim;
         type = "lua";
         config = ''
           require('django').setup({})
-          -- Atajos predeterminados del plugin para buscar vistas, modelos y abrir shell
           vim.keymap.set("n", "<leader>djv", "<cmd>DjangoViews<cr>", { desc = "Django: Buscar vistas" })
           vim.keymap.set("n", "<leader>djm", "<cmd>DjangoModels<cr>", { desc = "Django: Buscar modelos" })
           vim.keymap.set("n", "<leader>djs", "<cmd>DjangoShell<cr>", { desc = "Django: Toggle Shell" })
         '';
       }
-
-      # 5. Formateo declarativo al guardar (Conform.nvim)
       {
         plugin = conform-nvim;
         type = "lua";
@@ -264,15 +202,10 @@ in
               htmldjango = { "djlint" },
               lua = { "stylua" },
             },
-            format_on_save = {
-              timeout_ms = 500,
-              lsp_format = "fallback",
-            },
+            format_on_save = { timeout_ms = 100, lsp_format = "fallback" },
           })
         '';
       }
-
-      # 6. Linters asíncronos en segundo plano (Nvim-lint)
       {
         plugin = nvim-lint;
         type = "lua";
@@ -283,29 +216,190 @@ in
             html = { 'djlint' },
             htmldjango = { 'djlint' },
           }
-          -- Autocomando para ejecutar el linter automáticamente al guardar
           vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-            callback = function()
-              lint.try_lint()
-            end,
+            callback = function() lint.try_lint() end,
           })
         '';
       }
 
+      # === Lote 5 y 6: Obsidian y Productividad de Notas ===
+      {
+        plugin = plenary-nvim;
+        type = "lua";
+        config = "";
+      }
+      {
+        plugin = obsidian-nvim;
+        type = "lua";
+        config = ''
+          require("obsidian").setup({
+            workspaces = { { name = "personal", path = "~/vaults/personal" } },
+            notes_subdir = "notes",
+            daily_notes = { folder = "dailies", date_format = "%Y-%m-%d", alias_format = "%B %d, %Y" },
+            ui = { enable = false },
+
+            -- Desactiva los comandos antiguos estilo CamelCase
+            legacy_commands = false,
+          })
+
+          -- Configuración estándar y recomendada de atajos para buffers Markdown
+          vim.api.nvim_create_autocmd("FileType", {
+            pattern = "markdown",
+            callback = function()
+              -- Seguir enlaces con gf de forma nativa (o abrir por defecto si no es un enlace de Obsidian)
+              vim.keymap.set("n", "gf", function()
+                if require("obsidian").util.cursor_on_markdown_link() then
+                  return "<cmd>Obsidian follow_link<CR>"
+                else
+                  return "gf"
+                end
+              end, { noremap = false, expr = true, buffer = true, desc = "Obsidian: Seguir enlace" })
+
+              -- Alternar casillas de verificación (Checkboxes) con <leader>ch usando el nuevo comando espaciado
+              vim.keymap.set("n", "<leader>ch", "<cmd>Obsidian toggle_checkbox<CR>", { buffer = true, desc = "Obsidian: Alternar casilla" })
+            end,
+          })
+        '';
+      }
+      {
+        plugin = render-markdown-nvim;
+        type = "lua";
+        config = ''
+          require('render-markdown').setup({
+            heading = {
+              enabled = true,
+              icons = { " 󰲡 ", " 󰲣 ", " 󰲥 ", " 󰲧 ", " 󰲩 ", " 󰲫 " },
+            },
+            checkbox = {
+              enabled = true,
+              unchecked = { icon = "󰄱 " },
+              checked = { icon = " " },
+            },
+            -- La propiedad correcta para tablas es pipe_table y usa 'enabled'
+            pipe_table = {
+              enabled = true,
+              preset = "round", -- Aplica bordes redondeados limpios y estéticos
+            },
+            -- 'quote' controla la activación de blockquotes y callouts de forma nativa
+            quote = {
+              enabled = true,
+            },
+          })
+        '';
+      }
+      {
+        plugin = img-clip-nvim;
+        type = "lua";
+        config = ''
+          require('img-clip').setup({
+            default = { dir_path = "attachments", use_absolute_path = false, insert_mode_after_paste = false }
+          })
+          vim.keymap.set("n", "<leader>ip", "<cmd>PasteImage<cr>", { desc = "Markdown: Pegar imagen" })
+        '';
+      }
+      {
+        plugin = todo-comments-nvim;
+        type = "lua";
+        config = ''
+          require('todo-comments').setup({})
+          vim.keymap.set("n", "<leader>td", "<cmd>TodoTelescope<cr>", { desc = "Buscar TODOs" })
+        '';
+      }
+      {
+        plugin = which-key-nvim;
+        type = "lua";
+        config = "require('which-key').setup({ preset = 'modern' })";
+      }
+
+      # === Lote 7: Productividad, Edición Avanzada y Diagnósticos ===
+      
+      # 1. Snacks.nvim (Requerido por django.nvim y utilidades QoL)
+      {
+        plugin = snacks-nvim;
+        type = "lua";
+        config = ''
+          require('snacks').setup({
+            bigfile = { enabled = true },
+            notifier = { enabled = true },
+            quickfile = { enabled = true },
+            statuscolumn = { enabled = true },
+            words = { enabled = true },
+            picker = { enabled = true },
+          })
+        '';
+      }
+
+      # 2. Nvim-surround: Control absoluto de comillas, paréntesis y tags
+      {
+        plugin = nvim-surround;
+        type = "lua";
+        config = "require('nvim-surround').setup({})";
+      }
+
+      # 3. Grug-far: Buscar y reemplazar de forma masiva y visual
+      {
+        plugin = grug-far-nvim;
+        type = "lua";
+        config = ''
+          require('grug-far').setup({})
+          vim.keymap.set("n", "<leader>sr", "<cmd>GrugFar<cr>", { desc = "Buscar y Reemplazar (Grug-Far)" })
+        '';
+      }
+
+      # 4. Yanky: Historial interactivo del portapapeles
+      {
+        plugin = yanky-nvim;
+        type = "lua";
+        config = ''
+          require("yanky").setup({})
+
+          -- Carga segura de la extensión dentro de Yanky
+          pcall(function()
+            require('telescope').load_extension('yanky')
+          end)
+
+          -- Atajos para pegar del historial de Yanky
+          vim.keymap.set({"n","x"}, "p", "<Plug>(YankyPutAfter)")
+          vim.keymap.set({"n","x"}, "P", "<Plug>(YankyPutBefore)")
+          vim.keymap.set("n", "<leader>p", "<cmd>Telescope yanky<cr>", { desc = "Yanky: Historial del portapapeles" })
+        '';
+      }
+
+      # 5. Persistence: Gestión automática de sesiones
+      {
+        plugin = persistence-nvim;
+        type = "lua";
+        config = ''
+          require("persistence").setup({})
+          -- Atajos de teclado para restaurar sesiones
+          vim.keymap.set("n", "<leader>qs", function() require("persistence").load() end, { desc = "Sesión: Restaurar directorio" })
+          vim.keymap.set("n", "<leader>ql", function() require("persistence").load({ last = true }) end, { desc = "Sesión: Restaurar última" })
+        '';
+      }
+
+      # 6. Trouble: Ventana de diagnósticos y corrector de estilo
+      {
+        plugin = trouble-nvim;
+        type = "lua";
+        config = ''
+          require("trouble").setup({})
+          vim.keymap.set("n", "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", { desc = "Trouble: Ver diagnósticos" })
+        '';
+      }
     ];
 
-    # Dependencias del sistema necesarias
+    # Servidores y linters inyectados de forma aislada
     extraPackages = with pkgs; [
-      ripgrep      # Requerido por Telescope para buscar texto
-      fd           # Mejora dramática de rendimiento en búsquedas de Telescope
-      wl-clipboard # Para entornos Wayland
-      xclip        # Para entornos X11
+      ripgrep
+      fd
       git
+      wl-clipboard
+      xclip
 
-      # Binarios para desarrollo en Python & Django
-      basedpyright # El servidor de lenguajes (LSP) para Python
-      ruff         # Formateador e import-organizer ultra rápido en Rust
-      djlint       # Linter y formateador excelente para Django HTML templates
+      # Servidores de desarrollo
+      basedpyright
+      ruff
+      djlint
     ];
   };
 }
