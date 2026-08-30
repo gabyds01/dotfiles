@@ -8,6 +8,7 @@
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      ./modules/system-apps.nix
     ];
 
   # Bootloader.
@@ -114,37 +115,6 @@
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
-
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
-  environment.systemPackages = with pkgs; [
-    git
-    postman
-    dbeaver-bin
-    signal-desktop
-    telegram-desktop
-    alacritty
-    discord
-    btop
-    fastfetch
-    qbittorrent
-    readest
-    tree-sitter
-    tmux
-    fzf
-    pyright
-    obsidian
-    ripgrep
-    qalculate-qt
-    marksman
-    texliveFull
-    gparted
-    dnsmasq
-    zed-editor
-    antigravity
-    xournalpp
-    rnote
-  ];
 
   xdg.terminal-exec = {
     enable = true;
