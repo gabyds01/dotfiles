@@ -13,6 +13,12 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs"; # Le dice a HM que use los mismos paquetes
     };
+
+    # Añadimos el Flake oficial de Antigravity
+    antigravity-nix = {
+      url = "github:jacopone/antigravity-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = { self, nixpkgs, home-manager, ... }@inputs: {
@@ -22,16 +28,17 @@
         ./configuration.nix
         ./hardware-configuration.nix
 
-	# Cargamos el modulo de Home Manager en el sistema
-	home-manager.nixosModules.default
-	{
-	  home-manager = {
-	    useGlobalPkgs = true;
-	    useUserPackages = true;
-	    # Definimos el archivo de configuracion para el usuario
-	    users.gabrields = import ./home.nix;
-	  };
-	}
+	    # Cargamos el modulo de Home Manager en el sistema
+	    home-manager.nixosModules.default
+	    {
+	      home-manager = {
+	        useGlobalPkgs = true;
+	        useUserPackages = true;
+	        # Definimos el archivo de configuracion para el usuario
+            extraSpecialArgs = { inherit inputs; };
+	        users.gabrields = import ./home.nix;
+	      };
+	    }
       ];
     };
   };

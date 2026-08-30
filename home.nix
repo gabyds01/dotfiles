@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, inputs, ... }:
 
 {
 
@@ -36,14 +36,21 @@
 
     # Utilidades
     qbittorrent
-    antigravity
+
+    # Instalamos el IDE oficial y su CLI desde el Flake externo
+    inputs.antigravity-nix.packages.${pkgs.system}.google-antigravity-ide # El IDE
+    inputs.antigravity-nix.packages.${pkgs.system}.google-antigravity-cli # La CLI (comando 'agy')
   ];
 
   # Configuraciones declarativas directas (ejemplo: Git)
   programs.git = {
     enable = true;
-    userName = "gabyds01";
-    userEmail = "gabyingds01@gmail.com";
+    settings = {
+      user = {
+        userName = "gabyds01";
+        userEmail = "gabyingds01@gmail.com";
+      };
+    };
   };
 
   programs.alacritty = {

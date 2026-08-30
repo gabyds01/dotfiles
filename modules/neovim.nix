@@ -20,7 +20,7 @@ in
     vimAlias = true;
 
     # Opciones básicas generales de Neovim escritas en Lua embebido
-    extraLuaConfig = ''
+    initLua = ''
       -- Opciones básicas del editor
       vim.opt.number = true            -- Mostrar número de línea
       vim.opt.relativenumber = true    -- Números relativos para saltos rápidos
