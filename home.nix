@@ -56,9 +56,9 @@
   programs.alacritty = {
     enable = true;
     settings = {
-      terminal.shell = {
-        program = "${pkgs.tmux}/bin/tmux";
-      };
+      # terminal.shell = {
+      #   program = "${pkgs.tmux}/bin/tmux";
+      # };
       font = {
         normal = {
           family = "JetBrainsMono Nerd Font";
@@ -89,6 +89,17 @@
       nrs = "sudo nixos-rebuild switch --flake ~/dotfiles";
     };
   };
+
+  wayland.windowManager.hyprland = {
+    enable = true;
+    package = null;       # Hereda el binario de configuration.nix
+    portalPackage = null; # Hereda el portal XDG de configuration.nix
+    extraConfig = builtins.readFile ./configs/hyprland.lua;
+  };
+
+  wayland.windowManager.hyprland.systemd.variables = ["--all"];
+
+  home.sessionVariables.NIXOS_OZONE_WL = "1";
 
   # Esta version de estado es requerida para evitar problemas de compatibilidad
   home.stateVersion = "26.05"; 

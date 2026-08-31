@@ -49,6 +49,8 @@
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
 
+  programs.hyprland.enable = true;
+
   # Distribución del teclado en X11 y consola TTY
   services.xserver.xkb = {
     layout = "latam";
