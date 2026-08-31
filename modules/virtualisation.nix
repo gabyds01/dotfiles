@@ -2,21 +2,21 @@
 
 {
   # =========================================================================
-  # Virtualización y Contenedores
+  # Virtualización, Contenedores y Gestión de Máquinas Virtuales
   # =========================================================================
-  
-  # Docker
+
+  # Demonio de Docker para contenedores
   virtualisation.docker.enable = true;
 
-  # KVM / QEMU / Libvirt
+  # Demonio de Libvirt / QEMU / KVM para virtualización completa
   virtualisation.libvirtd = {
     enable = true;
-    qemu.vhostUserPackages = with pkgs; [ virtiofsd ];
+    qemu.vhostUserPackages = with pkgs; [ virtiofsd ]; # Soporte de carpetas compartidas de alto rendimiento
   };
 
-  # GUI para gestión de máquinas virtuales
+  # Interfaz gráfica (GUI) para crear y gestionar máquinas virtuales
   programs.virt-manager.enable = true;
 
-  # Confianza para la interfaz virtual de red de libvirt en el firewall
+  # Permitir el tráfico sin bloqueo en el puente de red virtual de Libvirt
   networking.firewall.trustedInterfaces = [ "virbr0" ];
 }

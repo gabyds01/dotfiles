@@ -14,9 +14,9 @@
   # 2. Arranque y Kernel (Bootloader)
   # =========================================================================
   boot.loader.systemd-boot.enable = true;
-  boot.loader.systemd-boot.configurationLimit = 10;
+  boot.loader.systemd-boot.configurationLimit = 10; # Mantener las últimas 10 generaciones en el menú
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = pkgs.linuxPackages_latest; # Usar la versión más reciente del kernel Linux
 
   # =========================================================================
   # 3. Red y Conectividad
@@ -49,9 +49,10 @@
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
 
+  # Compositor Wayland Hyprland a nivel de sistema
   programs.hyprland.enable = true;
 
-  # Distribución del teclado en X11 y consola TTY
+  # Distribución del teclado en entorno gráfico y consola TTY
   services.xserver.xkb = {
     layout = "latam";
     variant = "deadtilde";
@@ -61,6 +62,7 @@
   # =========================================================================
   # 6. Hardware y Periféricos
   # =========================================================================
+  # Bluetooth y soporte de gestión
   hardware.bluetooth = {
     enable = true;
     settings = {
@@ -76,14 +78,18 @@
     };
   };
 
+  services.blueman.enable = true;
+
+  # Soporte para tabletas gráficas (OpenTabletDriver)
   hardware.opentabletdriver.enable = true;
 
   # =========================================================================
   # 7. Audio e Impresión
   # =========================================================================
+  # Servicio de impresión CUPS
   services.printing.enable = true;
 
-  # Configuración de audio con PipeWire
+  # Servidor de audio PipeWire (reemplaza PulseAudio con compatibilidad ALSA/Pulse)
   services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
@@ -100,12 +106,12 @@
     isNormalUser = true;
     description = "Gabriel da Silva";
     extraGroups = [ "networkmanager" "wheel" "libvirtd" "docker" ];
-    packages = with pkgs; [ ];
   };
 
   # =========================================================================
   # 9. Integración del Sistema
   # =========================================================================
+  # Definición de terminal predeterminada para el estándar XDG
   xdg.terminal-exec = {
     enable = true;
     settings = {
@@ -126,10 +132,13 @@
   # =========================================================================
   # 11. Configuración de Nix y Mantenimiento
   # =========================================================================
+  # Permitir paquetes privativos/propietarios
   nixpkgs.config.allowUnfree = true;
+
+  # Habilitar soporte para Flakes y el comando moderno 'nix'
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
-  # Limpieza periódica del Nix Store
+  # Recolección periódica de basura del Nix Store
   nix.gc = {
     automatic = true;
     dates = "weekly";

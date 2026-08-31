@@ -1,16 +1,22 @@
 { config, pkgs, inputs, ... }:
 
 {
-
+  # =========================================================================
+  # 1. Módulos de Usuario
+  # =========================================================================
   imports = [
     ./modules/neovim.nix
   ];
 
-  # Usuario y directorio de inicio
+  # =========================================================================
+  # 2. Identidad y Directorio de Usuario
+  # =========================================================================
   home.username = "gabrields";
   home.homeDirectory = "/home/gabrields";
 
-  # Paquetes declarativos del usuario (ejemplo: git, bat)
+  # =========================================================================
+  # 3. Paquetes Declarativos del Usuario
+  # =========================================================================
   home.packages = with pkgs; [
     # Terminal y Herramientas de Consola
     alacritty
@@ -19,11 +25,37 @@
     ripgrep
     pyright
     marksman
+    brightnessctl
 
-    # Editores de Texo e IDEs
+    # Lanzador y Portapapeles
+    fuzzel
+    clipse
+
+    # Capturas y Grabación de Pantalla
+    grim
+    slurp
+    swappy
+    wf-recorder
+
+    # Barra de Estado
+    ashell
+
+    # Notificaciones
+    mako
+
+    # Cliente Bluetooth
+    overskride
+
+    # Ecosistema Oficial Hypr
+    hyprpaper
+    hyprlock
+    hypridle
+    hyprsunset
+
+    # Editores de Texto e IDEs
     zed-editor
 
-    # Comuniacion
+    # Comunicación
     discord
     telegram-desktop
     signal-desktop
@@ -37,12 +69,15 @@
     # Utilidades
     qbittorrent
 
-    # Instalamos el IDE oficial y su CLI desde el Flake externo
-    inputs.antigravity-nix.packages.${pkgs.system}.google-antigravity-ide # El IDE
-    inputs.antigravity-nix.packages.${pkgs.system}.google-antigravity-cli # La CLI (comando 'agy')
+    # IDE oficial y CLI desde el Flake externo Antigravity
+    inputs.antigravity-nix.packages.${pkgs.system}.google-antigravity-ide
+    inputs.antigravity-nix.packages.${pkgs.system}.google-antigravity-cli
   ];
 
-  # Configuraciones declarativas directas (ejemplo: Git)
+  # =========================================================================
+  # 4. Programas y Herramientas CLI / GUI
+  # =========================================================================
+  # Control de versiones con Git
   programs.git = {
     enable = true;
     settings = {
@@ -53,54 +88,59 @@
     };
   };
 
+  # Emulador de terminal Alacritty
   programs.alacritty = {
     enable = true;
     settings = {
-      # terminal.shell = {
-      #   program = "${pkgs.tmux}/bin/tmux";
-      # };
       font = {
         normal = {
           family = "JetBrainsMono Nerd Font";
           style = "Regular";
-      };
-      bold = {
+        };
+        bold = {
           family = "JetBrainsMono Nerd Font";
           style = "Bold";
-      };
-      size = 12.0;
+        };
+        size = 12.0;
       };
     };
   };
 
-  # Programas gestionados por Home Manager
+  # Navegador Web Firefox
   programs.firefox.enable = true;
 
+  # Gestión de entornos por directorio con integración Nix
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
   };
 
-  # 1. Le decimos a Home Manager que gestione Bash
+  # Shell Bash y atajos personalizados
   programs.bash = {
     enable = true;
-    
     shellAliases = {
       nrs = "sudo nixos-rebuild switch --flake ~/dotfiles";
     };
   };
 
+  # =========================================================================
+  # 5. Gestor de Ventanas (Wayland / Hyprland)
+  # =========================================================================
   wayland.windowManager.hyprland = {
     enable = true;
-    package = null;       # Hereda el binario de configuration.nix
+    package = null;       # Hereda el binario ya instalado por configuration.nix
     portalPackage = null; # Hereda el portal XDG de configuration.nix
     extraConfig = builtins.readFile ./configs/hyprland.lua;
   };
 
-  wayland.windowManager.hyprland.systemd.variables = ["--all"];
+  # Sincronizar variables de entorno de Hyprland con systemd
+  wayland.windowManager.hyprland.systemd.variables = [ "--all" ];
 
+  # =========================================================================
+  # 6. Variables de Entorno y Estado de Home Manager
+  # =========================================================================
   home.sessionVariables.NIXOS_OZONE_WL = "1";
 
-  # Esta version de estado es requerida para evitar problemas de compatibilidad
-  home.stateVersion = "26.05"; 
+  # Versión del estado de Home Manager (mantiene compatibilidad)
+  home.stateVersion = "26.05";
 }

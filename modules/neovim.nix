@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 let
-  # Empaquetamos mizisu/django.nvim directamente desde GitHub
+  # Empaquetado directo de mizisu/django.nvim desde GitHub
   django-nvim = pkgs.vimUtils.buildVimPlugin {
     name = "django-nvim";
     src = pkgs.fetchFromGitHub {
@@ -19,48 +19,54 @@ in
     viAlias = true;
     vimAlias = true;
 
-    # Opciones básicas generales de Neovim
+    # =========================================================================
+    # Configuración Base de Neovim (init.lua)
+    # =========================================================================
     initLua = ''
       -- Opciones básicas del editor
-      vim.opt.number = true            -- Mostrar número de línea
-      vim.opt.relativenumber = true    -- Números relativos para saltos rápidos
-      vim.opt.shiftwidth = 4           -- Indentación de 4 espacios
+      vim.opt.number = true             -- Mostrar número de línea absoluto
+      vim.opt.relativenumber = true     -- Números relativos para navegación eficiente
+      vim.opt.shiftwidth = 4            -- Indentación de 4 espacios
       vim.opt.tabstop = 4
-      vim.opt.expandtab = true         -- Convertir tabs en espacios
+      vim.opt.expandtab = true          -- Convertir tabs en espacios
       vim.opt.smartindent = true
-      vim.opt.termguicolors = true     -- Colores RGB reales en terminal
-      vim.opt.clipboard = "unnamedplus" -- Compartir portapapeles con el sistema
+      vim.opt.termguicolors = true      -- Soporte para paleta de colores RGB de 24 bits
+      vim.opt.clipboard = "unnamedplus" -- Sincronizar con el portapapeles del sistema
 
-      -- Corrector ortográfico nativo para escritura de notas
-      vim.opt.spelllang = { "es", "en" } -- Soporte para español e inglés
-      vim.opt.spell = false             -- Desactivado por defecto (se activa por buffer con :set spell)
+      -- Corrector ortográfico integrado
+      vim.opt.spelllang = { "es", "en" } -- Diccionarios para español e inglés
+      vim.opt.spell = false              -- Desactivado globalmente por defecto
 
-      -- Dibuja una línea vertical sutil en la columna 80 como guía de estilo
+      -- Guía visual en la columna 80
       vim.opt.colorcolumn = "80"
 
-      vim.g.mapleader = " "            -- Espacio como tecla líder (Leader key)
+      -- Tecla líder (Leader key)
+      vim.g.mapleader = " "
     '';
 
+    # =========================================================================
+    # Plugins y Extensiones
+    # =========================================================================
     plugins = with pkgs.vimPlugins; [
-      # === Tema Visual ===
+      # --- Tema Visual y Estética ---
       {
         plugin = kanagawa-nvim;
         type = "lua";
         config = ''
           require('kanagawa').setup({
-              compile = false,
-              undercurl = true,
-              commentStyle = { italic = true },
-              keywordStyle = { italic = true },
-              transparent = false,
-              theme = "dragon",
-              background = { dark = "dragon", light = "lotus" },
+            compile = false,
+            undercurl = true,
+            commentStyle = { italic = true },
+            keywordStyle = { italic = true },
+            transparent = false,
+            theme = "dragon",
+            background = { dark = "dragon", light = "lotus" },
           })
           vim.cmd("colorscheme kanagawa")
         '';
       }
 
-      # === Barra de Estado e Iconos ===
+      # --- Barra de Estado e Iconos ---
       nvim-web-devicons
       {
         plugin = lualine-nvim;
@@ -77,7 +83,7 @@ in
         '';
       }
 
-      # === Lote 1: Edición Básica ===
+      # --- Lote 1: Edición Básica y Explorador ---
       {
         plugin = comment-nvim;
         type = "lua";
@@ -97,7 +103,7 @@ in
         '';
       }
 
-      # === Lote 2: Sintaxis y Búsqueda ===
+      # --- Lote 2: Sintaxis (Treesitter) y Búsqueda Difusa (Telescope) ---
       {
         plugin = nvim-treesitter.withAllGrammars;
         type = "lua";
@@ -121,14 +127,13 @@ in
           require('telescope').load_extension('fzf')
         '';
       }
-      # Buscador rápido FZF compilado en C para Telescope
       {
         plugin = telescope-fzf-native-nvim;
         type = "lua";
         config = "";
       }
 
-      # === Lote 3: Integración de Git ===
+      # --- Lote 3: Control de Versiones (Git) ---
       {
         plugin = gitsigns-nvim;
         type = "lua";
@@ -151,7 +156,7 @@ in
         '';
       }
 
-      # === Lote 4: Python, Django e Inteligencia ===
+      # --- Lote 4: LSP, Autocompletado, Python y Django ---
       {
         plugin = nvim-lspconfig;
         type = "lua";
@@ -225,7 +230,7 @@ in
         '';
       }
 
-      # === Lote 5 y 6: Obsidian y Productividad de Notas ===
+      # --- Lote 5: Obsidian y Gestión de Notas Markdown ---
       {
         plugin = plenary-nvim;
         type = "lua";
@@ -240,24 +245,19 @@ in
             notes_subdir = "notes",
             daily_notes = { folder = "dailies", date_format = "%Y-%m-%d", alias_format = "%B %d, %Y" },
             ui = { enable = false },
-
-            -- Desactiva los comandos antiguos estilo CamelCase
             legacy_commands = false,
           })
 
-          -- Configuración estándar y recomendada de atajos para buffers Markdown
+          -- Configuración recomendada para buffers Markdown
           vim.api.nvim_create_autocmd("FileType", {
             pattern = "markdown",
             callback = function()
-            -- Desactiva por completo la línea guía vertical de 80 caracteres en notas
-              vim.opt_local.colorcolumn = ""
+              vim.opt_local.colorcolumn = ""    -- Desactiva la línea guía en notas
+              vim.opt_local.wrap = true         -- Ajuste de líneas largas a la pantalla
+              vim.opt_local.linebreak = true    -- Cortar por palabra completa
+              vim.opt_local.textwidth = 0
 
-              -- Ajuste visual dinámico e inteligente de texto (Soft Wrap)
-              vim.opt_local.wrap = true         -- Mostrar las líneas largas ajustadas a la pantalla
-              vim.opt_local.linebreak = true    -- Cortar las palabras completas al ajustar, no a la mitad
-              vim.opt_local.textwidth = 0       -- Desactivar corte físico (opcional, para notas más fluidas)
-
-              -- Seguir enlaces con gf de forma nativa (o abrir por defecto si no es un enlace de Obsidian)
+              -- Seguir enlaces con gf (Obsidian o nativo)
               vim.keymap.set("n", "gf", function()
                 if require("obsidian").util.cursor_on_markdown_link() then
                   return "<cmd>Obsidian follow_link<CR>"
@@ -266,7 +266,7 @@ in
                 end
               end, { noremap = false, expr = true, buffer = true, desc = "Obsidian: Seguir enlace" })
 
-              -- Alternar casillas de verificación (Checkboxes) con <leader>ch usando el nuevo comando espaciado
+              -- Alternar casillas de verificación (Checkboxes)
               vim.keymap.set("n", "<leader>ch", "<cmd>Obsidian toggle_checkbox<CR>", { buffer = true, desc = "Obsidian: Alternar casilla" })
             end,
           })
@@ -286,12 +286,10 @@ in
               unchecked = { icon = "󰄱 " },
               checked = { icon = " " },
             },
-            -- La propiedad correcta para tablas es pipe_table y usa 'enabled'
             pipe_table = {
               enabled = true,
-              preset = "round", -- Aplica bordes redondeados limpios y estéticos
+              preset = "round",
             },
-            -- 'quote' controla la activación de blockquotes y callouts de forma nativa
             quote = {
               enabled = true,
             },
@@ -322,9 +320,8 @@ in
         config = "require('which-key').setup({ preset = 'modern' })";
       }
 
-      # === Lote 7: Productividad, Edición Avanzada y Diagnósticos ===
-      
-      # 1. Snacks.nvim (Requerido por django.nvim y utilidades QoL)
+      # --- Lote 6: Productividad y Edición Avanzada ---
+      # Snacks.nvim (Requerido por django.nvim y utilidades QoL)
       {
         plugin = snacks-nvim;
         type = "lua";
@@ -340,14 +337,14 @@ in
         '';
       }
 
-      # 2. Nvim-surround: Control absoluto de comillas, paréntesis y tags
+      # Nvim-surround: Manipulación rápida de delimitadores (comillas, paréntesis, tags)
       {
         plugin = nvim-surround;
         type = "lua";
         config = "require('nvim-surround').setup({})";
       }
 
-      # 3. Grug-far: Buscar y reemplazar de forma masiva y visual
+      # Grug-far: Buscar y reemplazar masivo
       {
         plugin = grug-far-nvim;
         type = "lua";
@@ -357,7 +354,7 @@ in
         '';
       }
 
-      # 4. Yanky: Historial interactivo del portapapeles
+      # Yanky: Historial interactivo del portapapeles
       {
         plugin = yanky-nvim;
         type = "lua";
@@ -376,19 +373,18 @@ in
         '';
       }
 
-      # 5. Persistence: Gestión automática de sesiones
+      # Persistence: Restauración y guardado automático de sesiones
       {
         plugin = persistence-nvim;
         type = "lua";
         config = ''
           require("persistence").setup({})
-          -- Atajos de teclado para restaurar sesiones
           vim.keymap.set("n", "<leader>qs", function() require("persistence").load() end, { desc = "Sesión: Restaurar directorio" })
           vim.keymap.set("n", "<leader>ql", function() require("persistence").load({ last = true }) end, { desc = "Sesión: Restaurar última" })
         '';
       }
 
-      # 6. Trouble: Ventana de diagnósticos y corrector de estilo
+      # Trouble: Panel de diagnósticos, advertencias y referencias
       {
         plugin = trouble-nvim;
         type = "lua";
@@ -399,7 +395,9 @@ in
       }
     ];
 
-    # Servidores y linters inyectados de forma aislada
+    # =========================================================================
+    # Herramientas del Sistema y Servidores LSP
+    # =========================================================================
     extraPackages = with pkgs; [
       ripgrep
       fd
@@ -407,7 +405,7 @@ in
       wl-clipboard
       xclip
 
-      # Servidores de desarrollo
+      # Servidores y formateadores de desarrollo
       basedpyright
       ruff
       djlint

@@ -3,7 +3,18 @@
 -- =========================================================================
 
 hl.on("hyprland.start", function()
-        hl.exec_cmd("alacritty")
+    -- Sincronizar variables de entorno con systemd y D-Bus de inmediato
+    hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
+
+    -- Demonio de notificaciones
+    hl.exec_cmd("mako")
+
+    -- Demonios y utilidades en segundo plano
+    hl.exec_cmd("clipse -listen") -- Escuchar cambios del portapapeles
+    hl.exec_cmd("hyprpaper")      -- Demonio de fondos de pantalla
+    hl.exec_cmd("hypridle")       -- Demonio de gestión de inactividad
+    hl.exec_cmd("ashell")         -- Barra de estado
+    hl.exec_cmd("hyprsunset")     -- Filtro de luz azul / temperatura de color
 end)
 
 -- =========================================================================
@@ -14,33 +25,68 @@ end)
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 
 -- =========================================================================
--- 3. Entrada y Layout — Teclado y disposición de ventanas
+-- 3. Entrada y Disposición (Input & Layout)
 -- =========================================================================
 
 hl.config({
     input = {
         kb_layout = "latam",
+        touchpad = {
+            tap_to_click = true,
+            natural_scroll = true,
+            disable_while_typing = true,
+        }
     },
     general = {
-        layout = "dwindle",
+        layout = "master",
     }
 })
 
+-- Gestos del touchpad: deslizar 3 dedos horizontalmente para cambiar de workspace
+hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
+
 -- =========================================================================
--- 4. Atajos de Teclado — Keybindings principales
+-- 4. Atajos de Teclado (Keybindings) y Controles Multimedia
 -- =========================================================================
 
--- Abrir terminal (Alacritty)
+-- --- Lanzadores y Aplicaciones Principales ---
+-- Lanzador de aplicaciones (Fuzzel) con SUPER + Espacio
+hl.bind("SUPER + space", hl.dsp.exec_cmd("fuzzel"))
+
+-- Historial del Portapapeles (Clipse) ejecutado en Alacritty
+hl.bind("SUPER + V", hl.dsp.exec_cmd("alacritty --class clipse -e clipse"))
+
+-- Captura de pantalla del área seleccionada con anotaciones en Swappy
+hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'))
+
+-- Terminal (Alacritty)
 hl.bind("SUPER + Return", hl.dsp.exec_cmd("alacritty"))
 
+-- Navegador web (Firefox)
+hl.bind("SUPER + F", hl.dsp.exec_cmd("firefox"))
+
+-- --- Gestión de Sesión y Bloqueo ---
 -- Cerrar la ventana activa
 hl.bind("SUPER + Q", hl.dsp.window.close())
 
--- Salir de Hyprland de forma segura
+-- Salir de la sesión de Hyprland
 hl.bind("SUPER + SHIFT + M", hl.dsp.exit())
 
+-- Bloqueo de pantalla manual
+hl.bind("SUPER + SHIFT + L", hl.dsp.exec_cmd("hyprlock"))
+
+-- --- Controles Multimedia y Teclas Especiales (XF86) ---
+-- Control de volumen mediante PipeWire (wpctl)
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"), { repeating = true })
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"), { repeating = true })
+hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })
+
+-- Control de brillo de pantalla (brightnessctl)
+hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl set 5%+"))
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl set 5%-"))
+
 -- =========================================================================
--- 5. Navegación de Ventanas — Foco y manipulación con ratón
+-- 5. Navegación y Manipulación de Ventanas
 -- =========================================================================
 
 -- Cambiar el foco entre ventanas (estilo Vim: h/j/k/l)
@@ -49,9 +95,29 @@ hl.bind("SUPER + l", hl.dsp.focus({ direction = "r" }))
 hl.bind("SUPER + k", hl.dsp.focus({ direction = "u" }))
 hl.bind("SUPER + j", hl.dsp.focus({ direction = "d" }))
 
+-- Enviar la ventana activa al espacio especial "magic" (Scratchpad)
+hl.bind("SUPER + C", hl.dsp.window.move({ workspace = "special:magic" }))
+
+-- Alternar visualización del espacio especial "magic"
+hl.bind("SUPER + S", hl.dsp.workspace.toggle_special("magic"))
+
 -- Arrastrar y redimensionar ventanas flotantes con el ratón
-hl.bind("SUPER + mouse:272", hl.dsp.window.drag(), { mouse = true })    -- SUPER + Click Izquierdo
-hl.bind("SUPER + mouse:273", hl.dsp.window.resize(), { mouse = true })  -- SUPER + Click Derecho
+hl.bind("SUPER + mouse:272", hl.dsp.window.drag(), { mouse = true })    -- SUPER + Clic Izquierdo (Mover)
+hl.bind("SUPER + mouse:273", hl.dsp.window.resize(), { mouse = true })  -- SUPER + Clic Derecho (Redimensionar)
+
+-- --- Modo de Redimensionamiento (Submap Resize estilo Vim) ---
+hl.bind("SUPER + R", hl.dsp.submap("resize"))
+
+hl.define_submap("resize", function()
+    -- hjkl para alterar dimensiones de la ventana activa
+    hl.bind("h", hl.dsp.window.resize({ x = -20, y = 0, relative = true }))
+    hl.bind("l", hl.dsp.window.resize({ x = 20, y = 0, relative = true }))
+    hl.bind("k", hl.dsp.window.resize({ x = 0, y = -20, relative = true }))
+    hl.bind("j", hl.dsp.window.resize({ x = 0, y = 20, relative = true }))
+
+    -- Salir del modo de redimensionamiento
+    hl.bind("escape", hl.dsp.submap("reset"))
+end)
 
 -- =========================================================================
 -- 6. Workspaces — Gestión de escritorios virtuales (1-9)
@@ -61,10 +127,10 @@ hl.bind("SUPER + mouse:273", hl.dsp.window.resize(), { mouse = true })  -- SUPER
 for i = 1, 9 do
     local ws = tostring(i)
 
-    -- Cambiar al workspace correspondiente
+    -- Cambiar al workspace correspondiente (SUPER + [1-9])
     hl.bind("SUPER + " .. ws, hl.dsp.focus({ workspace = ws }))
 
-    -- Mover la ventana activa al workspace correspondiente
+    -- Mover la ventana activa al workspace correspondiente (SUPER + SHIFT + [1-9])
     hl.bind("SUPER + SHIFT + " .. ws, hl.dsp.window.move({ workspace = ws }))
 end
 
@@ -73,49 +139,51 @@ hl.bind("SUPER + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
 hl.bind("SUPER + mouse_up", hl.dsp.focus({ workspace = "e-1" }))
 
 -- =========================================================================
--- 7. Estética — Bordes, gaps, esquinas redondeadas y blur
+-- 7. Estética — Bordes, gaps, decoraciones y rendimiento
 -- =========================================================================
 
 hl.config({
-    general = {
-        border_size = 2,            -- Tamaño del borde (px)
-        gaps_in = 6,                -- Espacio entre ventanas (px)
-        gaps_out = 12,              -- Espacio con los bordes de la pantalla (px)
+    animations = {
+        enabled = false,
+    },
 
-        -- Colores de borde: formato "rgba(RRGGBBAA)"
+    general = {
+        border_size = 2,           -- Grosor del borde en píxeles
+        gaps_in = 3,               -- Espacio interior entre ventanas
+        gaps_out = 6,              -- Espacio exterior con los bordes de pantalla
+
+        -- Colores de borde en formato "rgba(RRGGBBAA)"
         ["col.active_border"] = { colors = { "rgba(33ccffee)", "rgba(00ff99ee)" }, angle = 45 },
         ["col.inactive_border"] = "rgba(595959aa)",
     },
 
     decoration = {
-        rounding = 10,              -- Radio de esquinas redondeadas (px)
-        rounding_power = 2.0,       -- 2.0 = circular, 4.0 = squircle estilo iOS
-
-        active_opacity = 1.0,       -- Opacidad de la ventana activa
-        inactive_opacity = 0.85,    -- Opacidad de las ventanas en segundo plano
-
-        -- Desenfoque (blur) para ventanas translúcidas
+        rounding = 0,              -- Bordes rectos sin redondeo
+        shadow = {
+            enabled = false,
+        },
         blur = {
-            enabled = true,
-            size = 8,
-            passes = 3,             -- Más pasadas = blur más suave (mayor costo GPU)
-            new_optimizations = true,
+            enabled = false,
         }
-    }
+    },
+
+    misc = {
+        disable_hyprland_logo = true,     -- Desactiva el logo de inicio
+        disable_splash_rendering = true,  -- Desactiva mensajes de bienvenida
+        background_color = "0x111111",    -- Fondo plano gris oscuro de bajo consumo
+    },
+
+    xwayland = {
+        force_zero_scaling = true,    -- Evita escalado borroso en aplicaciones XWayland
+        use_nearest_neighbor = true,  -- Escalado nítido por vecino más cercano
+    },
 })
 
 -- =========================================================================
--- 8. Reglas de Ventana — Comportamiento por aplicación
+-- 8. Reglas de Ventana (Window Rules)
 -- =========================================================================
 
--- Hacer que el control de volumen flote por defecto
--- TODO: agregar la qalculate
-hl.window_rule({
-    match = { class = "org.pulseaudio.pavucontrol" },
-    float = true
-})
-
--- Enviar Firefox al Workspace 1 (silencioso, sin cambiar de pantalla)
+-- Enviar Firefox al Workspace 1 (silencioso, sin cambiar el foco de monitor)
 hl.window_rule({
     match = { class = "firefox" },
     workspace = "1 silent"
@@ -125,4 +193,10 @@ hl.window_rule({
 hl.window_rule({
     match = { class = "Alacritty" },
     opacity = "0.9 override 0.8 override 1.0 override"
+})
+
+-- Portapapeles flotante
+hl.window_rule({
+    match = { class = "clipse" },
+    float = true
 })
