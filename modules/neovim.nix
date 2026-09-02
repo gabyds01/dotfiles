@@ -42,6 +42,26 @@ in
 
       -- Tecla líder (Leader key)
       vim.g.mapleader = " "
+
+      -- Integración con Excalidraw --
+
+      -- Abrir el contenido entre paréntesis en Excalidraw
+      vim.keymap.set("n", "<leader>xo", function()
+        vim.cmd("norm! yib")
+        local word = vim.fn.getreg('"')
+        if word and word ~= "" then
+          vim.fn.jobstart({ "excalidraw", word })
+        end
+      end, { noremap = true, silent = true, desc = "Excalidraw: Abrir archivo" })
+
+      -- Convertir enlace markdown a imagen SVG
+      vim.keymap.set("n", "<leader>xp", function()
+        local line = vim.api.nvim_get_current_line()
+        local filename = string.match(line, "^.+%.")
+        if filename then
+          vim.api.nvim_put({ "!" .. filename .. "svg)" }, "l", true, true)
+        end
+      end, { noremap = true, silent = true, desc = "Excalidraw: Pegar referencia SVG" })
     '';
 
     # =========================================================================
@@ -109,8 +129,7 @@ in
         type = "lua";
         config = ''
           vim.api.nvim_create_autocmd('FileType', {
-            pattern = { 'python', 'html', 'htmldjango', 'json', 'yaml', 'bash', 'gitconfig', 'markdown' },
-            callback = function() vim.treesitter.start() end,
+            callback = function() pcall(vim.treesitter.start) end,
           })
         '';
       }
@@ -160,7 +179,26 @@ in
       {
         plugin = nvim-lspconfig;
         type = "lua";
-        config = "vim.lsp.enable('basedpyright')";
+        config = ''
+          vim.lsp.config('basedpyright', {
+            before_init = function(_, config)
+              local venv = vim.fn.getcwd() .. "/.venv/bin/python"
+              if vim.fn.filereadable(venv) == 1 then
+                config.settings = config.settings or {}
+                config.settings.python = { pythonPath = venv }
+              end
+            end,
+            settings = {
+              basedpyright = {
+                analysis = {
+                  typeCheckingMode = "basic",
+                  useLibraryCodeForTypes = true,
+                },
+              },
+            },
+          })
+          vim.lsp.enable('basedpyright')
+        '';
       }
       {
         plugin = blink-cmp;
@@ -185,7 +223,7 @@ in
         plugin = venv-selector-nvim;
         type = "lua";
         config = ''
-          require('venv-selector').setup({ options = { on_venv_activate_callback = nil } })
+          require('venv-selector').setup({})
           vim.keymap.set("n", "<leader>vs", "<cmd>VenvSelect<cr>", { desc = "Python: Elegir entorno virtual" })
         '';
       }
@@ -204,6 +242,14 @@ in
         type = "lua";
         config = ''
           require('conform').setup({
+            formatters = {
+              ruff_format = {
+                command = "${pkgs.ruff}/bin/ruff",
+              },
+              djlint = {
+                command = "${pkgs.djlint}/bin/djlint",
+              },
+            },
             formatters_by_ft = {
               python = { "ruff_format" },
               html = { "djlint" },
@@ -320,7 +366,6 @@ in
         config = "require('which-key').setup({ preset = 'modern' })";
       }
 
-      # --- Lote 6: Productividad y Edición Avanzada ---
       # Snacks.nvim (Requerido por django.nvim y utilidades QoL)
       {
         plugin = snacks-nvim;
@@ -333,6 +378,21 @@ in
             statuscolumn = { enabled = true },
             words = { enabled = true },
             picker = { enabled = true },
+            image = {
+              enabled = true,
+              doc = {
+                enabled = true,
+                inline = true,
+                float = true,
+                max_width = 80,
+                max_height = 40,
+              },
+              formats = {
+                "png", "jpg", "jpeg", "gif", "bmp", "webp",
+                "tiff", "heic", "avif", "mp4", "mov", "avi",
+                "mkv", "webm", "pdf", "svg"
+              },
+            },
           })
         '';
       }
@@ -404,6 +464,8 @@ in
       git
       wl-clipboard
       xclip
+      imagemagick # Renderizado y conversión para snacks.image (magick/convert)
+      stylua      # Formateador de Lua configurado en conform-nvim
 
       # Servidores y formateadores de desarrollo
       basedpyright

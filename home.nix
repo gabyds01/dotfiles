@@ -19,7 +19,6 @@
   # =========================================================================
   home.packages = with pkgs; [
     # Terminal y Herramientas de Consola
-    alacritty
     tmux
     fzf
     ripgrep
@@ -66,6 +65,9 @@
     qalculate-qt
     texliveFull
 
+    # Pizarra de dibujo (AppImage empaquetado con Nix)
+    (pkgs.callPackage ./modules/excalidraw-desktop.nix {})
+
     # Utilidades
     qbittorrent
 
@@ -88,21 +90,16 @@
     };
   };
 
-  # Emulador de terminal Alacritty
-  programs.alacritty = {
+  # Emulador de terminal Kitty
+  programs.kitty = {
     enable = true;
+    font = {
+      name = "JetBrainsMono Nerd Font";
+      size = 12.0;
+    };
     settings = {
-      font = {
-        normal = {
-          family = "JetBrainsMono Nerd Font";
-          style = "Regular";
-        };
-        bold = {
-          family = "JetBrainsMono Nerd Font";
-          style = "Bold";
-        };
-        size = 12.0;
-      };
+      confirm_os_window_close = 0;
+      enable_audio_bell = false;
     };
   };
 
@@ -123,6 +120,60 @@
     };
   };
 
+  services.mako.enable = true;
+  services.hypridle.enable = true;  # Levanta la gestión de inactividad
+  services.hyprpaper.enable = true; # Levanta el gestor de fondos de pantalla
+
+  systemd.user.services = {
+    # Servicio para el portapapeles Clipse
+    clipse = {
+      Unit = {
+        Description = "Daemon de portapapeles Clipse";
+        After = [ "graphical-session.target" ];
+        PartOf = [ "graphical-session.target" ];
+      };
+      Service = {
+        ExecStart = "${pkgs.clipse}/bin/clipse -listen";
+        Restart = "always";
+      };
+      Install = {
+        WantedBy = [ "graphical-session.target" ];
+      };
+    };
+  
+    # Servicio para el filtro de luz azul Hyprsunset
+    hyprsunset = {
+      Unit = {
+        Description = "Filtro de luz azul Hyprsunset";
+        After = [ "graphical-session.target" ];
+        PartOf = [ "graphical-session.target" ];
+      };
+      Service = {
+        ExecStart = "${pkgs.hyprsunset}/bin/hyprsunset";
+        Restart = "always";
+      };
+      Install = {
+        WantedBy = [ "graphical-session.target" ];
+      };
+    };
+  
+    # Servicio para la barra de estado ashell
+    ashell = {
+      Unit = {
+        Description = "Barra de estado ashell";
+        After = [ "graphical-session.target" ];
+        PartOf = [ "graphical-session.target" ];
+      };
+      Service = {
+        ExecStart = "${pkgs.ashell}/bin/ashell";
+        Restart = "always";
+      };
+      Install = {
+        WantedBy = [ "graphical-session.target" ];
+      };
+    };
+  };
+
   # =========================================================================
   # 5. Gestor de Ventanas (Wayland / Hyprland)
   # =========================================================================
@@ -130,11 +181,14 @@
     enable = true;
     package = null;       # Hereda el binario ya instalado por configuration.nix
     portalPackage = null; # Hereda el portal XDG de configuration.nix
+    systemd.enable = true;
     extraConfig = builtins.readFile ./configs/hyprland.lua;
   };
 
   # Sincronizar variables de entorno de Hyprland con systemd
   wayland.windowManager.hyprland.systemd.variables = [ "--all" ];
+
+  xdg.configFile."hypr/hyprpaper.conf".source = ./configs/hyprpaper.conf;
 
   # =========================================================================
   # 6. Variables de Entorno y Estado de Home Manager

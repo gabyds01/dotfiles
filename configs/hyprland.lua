@@ -2,21 +2,6 @@
 -- 1. Autostart — Aplicaciones que se lanzan al iniciar Hyprland
 -- =========================================================================
 
-hl.on("hyprland.start", function()
-    -- Sincronizar variables de entorno con systemd y D-Bus de inmediato
-    hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
-
-    -- Demonio de notificaciones
-    hl.exec_cmd("mako")
-
-    -- Demonios y utilidades en segundo plano
-    hl.exec_cmd("clipse -listen") -- Escuchar cambios del portapapeles
-    hl.exec_cmd("hyprpaper")      -- Demonio de fondos de pantalla
-    hl.exec_cmd("hypridle")       -- Demonio de gestión de inactividad
-    hl.exec_cmd("ashell")         -- Barra de estado
-    hl.exec_cmd("hyprsunset")     -- Filtro de luz azul / temperatura de color
-end)
-
 -- =========================================================================
 -- 2. Monitores — Detección automática de pantallas
 -- =========================================================================
@@ -53,14 +38,14 @@ hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
 -- Lanzador de aplicaciones (Fuzzel) con SUPER + Espacio
 hl.bind("SUPER + space", hl.dsp.exec_cmd("fuzzel"))
 
--- Historial del Portapapeles (Clipse) ejecutado en Alacritty
-hl.bind("SUPER + V", hl.dsp.exec_cmd("alacritty --class clipse -e clipse"))
+-- Historial del Portapapeles (Clipse) ejecutado en Kitty
+hl.bind("SUPER + V", hl.dsp.exec_cmd("kitty --class clipse -e clipse"))
 
 -- Captura de pantalla del área seleccionada con anotaciones en Swappy
 hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'))
 
--- Terminal (Alacritty)
-hl.bind("SUPER + Return", hl.dsp.exec_cmd("alacritty"))
+-- Terminal (Kitty)
+hl.bind("SUPER + Return", hl.dsp.exec_cmd("kitty"))
 
 -- Navegador web (Firefox)
 hl.bind("SUPER + F", hl.dsp.exec_cmd("firefox"))
@@ -189,9 +174,9 @@ hl.window_rule({
     workspace = "1 silent"
 })
 
--- Opacidades personalizadas para Alacritty: "activa inactiva fullscreen"
+-- Opacidades personalizadas para Kitty: "activa inactiva fullscreen"
 hl.window_rule({
-    match = { class = "Alacritty" },
+    match = { class = "kitty" },
     opacity = "0.9 override 0.8 override 1.0 override"
 })
 

@@ -36,6 +36,7 @@
           home-manager = {
             useGlobalPkgs = true;
             useUserPackages = true;
+            backupFileExtension = "bak";
             extraSpecialArgs = { inherit inputs; }; # Permite acceder a inputs externos en home.nix
             users.gabrields = import ./home.nix;
           };
